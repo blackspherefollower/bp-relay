@@ -79,7 +79,13 @@ module.exports = {
   devServer: {
     historyApiFallback: true,
     noInfo: true,
-    contentBase: '.'
+    contentBase: '.',
+    proxy: {
+        '/room/*': {
+            target: 'ws://localhost:3000',
+            ws: true,
+        },
+    },
   },
   performance: {
     hints: false

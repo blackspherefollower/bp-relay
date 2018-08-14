@@ -1,9 +1,20 @@
-import { ButtplugClient, ButtplugMessage, Device, Log, ButtplugDeviceMessage, StopAllDevices,
-         SingleMotorVibrateCmd } from "buttplug";
+import {
+  ButtplugClient,
+  ButtplugMessage,
+  Device,
+  Log,
+  ButtplugDeviceMessage,
+  StopAllDevices,
+  SingleMotorVibrateCmd,
+  FromJSON,
+  ErrorClass,
+  Error as ButtplugError,
+} from "buttplug";
 import Vue from "vue";
 import "vue-awesome/icons/bars";
 import { Component, Model } from "vue-property-decorator";
 const AppConfig = require("../../dist/appconfig.json");
+import { classToPlain } from "class-transformer";
 
 @Component({
 })
@@ -26,27 +37,34 @@ export default class Relay extends Vue {
     this.isConnected = false;
     this.errorMsg = null;
     this.ws = new WebSocket(
-      //(location.protocol === "http" ? "ws" : "wss") + "://" +
-      //location.host + ":" +
-      //location.port + "/room/" +
+      // (location.protocol === "http" ? "ws" : "wss") + "://" +
+      // location.host + ":" +
+      // location.port + "/room/" +
       "ws://localhost:3000/" +
-      this.$route.params['room']);
+      this.$route.params.room);
     this.ws.onopen = () => {
       this.isConnected = true;
       console.info("WebSocket open detected!");
-      this.ws != null && this.ws.send(JSON.stringify({relayClientConnected: 'hello!'}));
-    }
+      if (this.ws !== null) {
+        this.ws.send(JSON.stringify({type: "relay", message: {relayClientConnected: "hello!"}}));
+      }
+    };
     this.ws.onmessage = (event) => this.OnNewMessage(event.data);
-    this.ws.onclose = () => this.mounted();
+    this.ws.onclose = (event) => {
+      console.error("WebSocket disconnect observed:", event);
+      this.OpenWS();
+    };
     this.ws.onerror = (event) => {
       console.error("WebSocket error observed:", event);
       this.errorMsg = event.toString();
       this.OpenWS();
     };
-    if (this.ws.readyState == WebSocket.OPEN) {
-      console.info("WebSocket open occured?");
+    if (this.ws.readyState === WebSocket.OPEN) {
+      console.info("WebSocket open occurred?");
       this.isConnected = true;
-      this.ws != null && this.ws.send(JSON.stringify({relayClientConnected: 'hello!'}));
+      if (this.ws !== null) {
+        this.ws.send(JSON.stringify({type: "relay", message: {relayClientConnected: "hello!"}}));
+      }
     }
   }
 
@@ -76,31 +94,77 @@ export default class Relay extends Vue {
 
   private OnClientDisconnect() {
     this.devices = [];
-    if(this.ws != null) {
-      this.ws.send(JSON.stringify(this.devices));
+    if (this.ws != null) {
+      this.ws.send(JSON.stringify({type: "relay", message: { bpServerConnected: false }}));
+    }
+  }
+
+  private OnClientConnect() {
+    if (this.ws != null) {
+      this.ws.send(JSON.stringify({type: "relay", message: { bpServerConnected: true }}));
     }
   }
 
   private OnDeviceConnected(aDevice: Device) {
     this.devices.push(aDevice);
-    if(this.ws != null) {
-      this.ws.send(JSON.stringify({ deviceAdded: aDevice }));
+    if (this.ws != null) {
+      const dev = classToPlain(aDevice);
+      this.ws.send(JSON.stringify({type: "relay", message: { deviceAdded: dev }}));
     }
   }
 
-  private OnNewMessage(aMessage: string) {
-    this.messages.push(aMessage);
+  private async OnNewMessage(aMessage: string) {
+    // Process message
+    const msgObj = JSON.parse(aMessage);
+    if (msgObj.hasOwnProperty("type")) {
+      switch (msgObj.type) {
+        case "buttplug":
+          try {
+            const bmsg = FromJSON(msgObj.message);
+            if (bmsg.length > 0 && (bmsg[0] instanceof ButtplugError)) {
+              if ((bmsg[0] as ButtplugError).ErrorCode === ErrorClass.ERROR_MSG &&
+                (bmsg[0] as ButtplugError).Id === 0) {
+                throw new Error((bmsg[0] as ButtplugError).ErrorMessage);
+              }
+            }
+            for (const m of bmsg) {
+              console.log("message", "Valid BP message");
+              if (m instanceof ButtplugDeviceMessage) {
+                const dm = m as ButtplugDeviceMessage;
+                const devs = this.devices.filter((device) => device.Index === dm.DeviceIndex);
+                if (devs.length === 1) {
+                  const outgoing = await this.OnDeviceMessage(devs[0], dm);
+                  console.log(`renumbering response {outgoing.Id} to {dm.Id}`);
+                  console.log("response", "[" + outgoing.toJSON() + "]");
+                  if (this.ws != null) {
+                    this.ws.send("[" + outgoing.toJSON() + "]");
+                  }
+                }
+              }
+            }
+          } catch {
+            // no-op
+          }
+          break;
+        case "relay":
+          break;
+      }
+    }
+
+    // Message display
+    this.messages.push(msgObj);
   }
 
   private OnDeviceDisconnected(aDevice: Device) {
     this.devices = this.devices.filter((device) => device.Index !== aDevice.Index);
-    if(this.ws != null) {
-      this.ws.send(JSON.stringify({ deviceRemoved: aDevice }));
+    if (this.ws != null) {
+      const dev = classToPlain(aDevice);
+      this.ws.send(JSON.stringify({type: "relay", message: { deviceRemoved: dev }}));
     }
   }
 
-  private async OnDeviceMessage(aDevice: Device, aMessage: ButtplugDeviceMessage) {
-    (Vue as any).Buttplug.SendDeviceMessage(aDevice, aMessage);
+  private async OnDeviceMessage(aDevice: Device, aMessage: ButtplugDeviceMessage): Promise<ButtplugMessage> {
+    return (Vue as any).Buttplug.SendDeviceMessage(aDevice, aMessage);
   }
 
   private OnDragStart() {

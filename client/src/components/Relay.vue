@@ -1,5 +1,5 @@
 <template>
-  <v-app id="relay-room-container">
+  <v-app id="app">
     <v-touch id="gesture-wrapper" v-on:swiperight="SideNavOpen" v-on:swipeleft="SideNavClose">
       <v-container>
         <header>
@@ -14,7 +14,7 @@
             <div data-reactroot="" class="_2KV-widgets-shared--patreonWidgetWrapper"><a class="sc-bxivhb ffInCX" color="primary" type="button" href="https://www.patreon.com/bePatron?u=2860444&amp;redirect_uri=http%3A%2F%2Fbuttplug.world%2Ftest.html&amp;utm_medium=widget" role="button"><div class="sc-htpNat gdWQYu"><div class="sc-gzVnrw dJCpyC" display="flex" wrap="nowrap" direction="[object Object]"><div class="sc-dnqmqq llsQFn"><span class="sc-htoDjs fqfmvk"><svg viewBox="0 0 569 546" version="1.1" xmlns="http://www.w3.org/2000/svg"><title>Patreon logo</title><g><circle data-color="1" id="Oval" cx="362.589996" cy="204.589996" r="204.589996"></circle><rect data-color="2" id="Rectangle" x="0" y="0" width="100" height="545.799988"></rect></g></svg></span></div><div class="sc-gqjmRU fFOxVX" width="1.5"></div>Give us money</div></div></a></div>
           </div>
         </header>
-        <v-container grid-list-md text-xs-center>
+        <v-container grid-list-md text-xs-center id="relay-room-container">
           <v-layout row wrap>
             <v-flex xs6>
               <v-list two-line v-if="this.isConnected">
@@ -29,7 +29,7 @@
             </v-flex>
             <v-flex xs6>
               <v-list two-line>
-                <v-list-tile v-for="device in this.devices" :key="index">
+                <v-list-tile v-for="device in this.devices" :key="device.Index">
                   <v-list-tile-content>
                     <v-list-tile-title v-html="device.Name"></v-list-tile-title>
                   </v-list-tile-content>
@@ -53,19 +53,20 @@
               <v-tab-item id="buttplugpanel">
                 <buttplug-panel
                   ref="buttplugPanel"
+                  @connected="OnClientConnect"
                   @disconnected="OnClientDisconnect"
                   @deviceconnected="OnDeviceConnected"
                   @devicedisconnected="OnDeviceDisconnected"
                 />
               </v-tab-item>
               <v-tab-item id="aboutpanel">
-                <p><b>Buttplug Playground</b></p>
-                <p>Version: <a :href="'https://github.com/metafetish/buttplug-playground/tree/' + config.build_commit">{{ config.build_commit }}</a></p>
+                <p><b>Buttplug Relay</b></p>
+                <p>Version: <a :href="'https://github.com/' + this.config.gh_repo + '/tree/' + this.config.build_commit">{{ this.config.build_commit }}</a></p>
                 <p>Updated: {{ this.config.build_date }}</p>
                 <p>Buttplug v{{ this.config.buttplug_version }}</p>
                 <p>Component v{{ this.config.component_version }}</p>
-                <p>Developed By <a href="https://metafetish.com">Metafetish</a></p>
-                <p>Open Source! <a href="https://github.com/metafetish/buttplug-playground">Code available on Github</a></p>
+                <p>Developed By <a href="https://metafetish.com">Metafetish contributors</a></p>
+                <p>Open Source! <a :href="'https://github.com/' + this.config.gh_repo">Code available on Github</a></p>
                 <p>We Like Money! <a href="https://patreon.com/qdot">Visit Our Patreon</a></p>
               </v-tab-item>
             </v-tabs-items>
@@ -197,7 +198,7 @@
   /********************************/
   /* Misc application styles */
   /********************************/
-  #playground-container {
+  #relay-room-container {
     width: 80%;
     margin: auto;
   }

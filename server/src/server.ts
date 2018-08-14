@@ -1,51 +1,25 @@
 import * as express from 'express';
 import * as expressWs from 'express-ws';
-import * as WebSocket from 'ws';
+import RelayRoom from './RelayRoom';
 import {
   ButtplugServer,
   FromJSON,
   Error as ButtplugError,
   ButtplugMessage,
   RequestServerInfo,
-  ErrorClass, Device
+  ErrorClass, Device, ButtplugDeviceMessage, Ok
 } from "buttplug";
+import * as Messages from "buttplug/dist/main/src/core/Messages";
+import {RelayClientType} from "./RelayClient";
 
 const wsApp = expressWs(express());
 const app = wsApp.app;
 
-enum RelayClientType {
-  UNKNOWN,
-  BUTTPLUG_CLIENT,
-  RELAY_CLIENT
-}
 
-class RelayClient {
-  client: WebSocket;
-  type: RelayClientType = RelayClientType.UNKNOWN;
-  devices: Device[] = [];
 
-  constructor(aClient: WebSocket) {
-    this.client = aClient;
-  }
-}
 
-class ButtplugRelayServer {
-  clients: Array<RelayClient>;
-  server: ButtplugServer;
 
-  constructor() {
-    this.clients = new Array<RelayClient>();
-    this.server = new ButtplugServer();
-  }
-
-  repeat(message: ButtplugMessage) {
-    for (let wsc of this.clients) {
-      wsc.client.send("[" + message.toJSON() + "]");
-    }
-  }
-}
-
-let rooms: Map<string, ButtplugRelayServer> = new Map<string, ButtplugRelayServer>();
+let rooms: Map<string, RelayRoom> = new Map<string, RelayRoom>();
 
 
 app.get('/', function(req, res, next){
@@ -61,7 +35,7 @@ app.get('/:room', function(req, res, next){
   let room = req.params['room'];
   let rs = rooms.get(room);
   if (rs === undefined) {
-    rs = new ButtplugRelayServer();
+    rs = new RelayRoom();
   }
   let data = `<http><body>${rs.clients.length}</body></http>`;
   res.send(data);
@@ -72,11 +46,11 @@ app.ws('/:room', function(ws, req) {
   let room = req.params['room'];
   let rs = rooms.get(room);
   if (rs === undefined) {
-    rs = new ButtplugRelayServer();
+    rs = new RelayRoom();
     rs.server.on("message", rs.repeat);
     rooms.set(room, rs);
   }
-  rs.clients.push(new RelayClient(ws));
+  rs.addClient(ws);
 
   ws.on('message',  async (msg) => {
     console.log('message', msg);
@@ -85,28 +59,31 @@ app.ws('/:room', function(ws, req) {
     if(rs === undefined) {
       return;
     }
-    let conn: RelayClient | null = null;
-    for (let wsc of rs.clients) {
-      if (wsc.client == ws) {
-        conn = wsc;
-        break;
-      }
-    }
+    let conn = rs.getClient(ws);
     if (conn === null) {
-      conn = new RelayClient(ws);
-      rs.clients.push(conn);
+      conn = rs.addClient(ws);
     }
 
+    let outgoing: Messages.ButtplugMessage | null = null;
+    let obj: any = JSON.parse(msg as string);
+
     try {
-      const bmsg = FromJSON(msg);
+      let bmsg: any = null;
+      if (obj !== undefined && obj.hasOwnProperty("type") && obj.type === "buttplug") {
+        console.log("message", "Embedded BP message");
+        bmsg = FromJSON(obj.message);
+      } else {
+        bmsg = FromJSON(msg);
+      }
       if (bmsg.length > 0 && (bmsg[0] instanceof ButtplugError)) {
-        if((bmsg[0] as ButtplugError).ErrorCode == ErrorClass.ERROR_MSG && (bmsg[0] as ButtplugError).Id === 0) {
+        if ((bmsg[0] as ButtplugError).ErrorCode === ErrorClass.ERROR_MSG &&
+          (bmsg[0] as ButtplugError).Id === 0) {
           throw new Error((bmsg[0] as ButtplugError).ErrorMessage);
         }
       }
       for (const m of bmsg) {
-        console.log('message', "Valid BP message");
-        if(m instanceof RequestServerInfo) {
+        console.log("message", "Valid BP message");
+        if (m instanceof RequestServerInfo) {
           for (let wsc of rs.clients) {
             if (wsc === conn) {
               wsc.type = RelayClientType.BUTTPLUG_CLIENT;
@@ -116,30 +93,37 @@ app.ws('/:room', function(ws, req) {
           }
         }
 
-        const outgoing = await rs.server.SendMessage(m);
+        outgoing = await rs.server.SendMessage(m);
+        console.log("response", "[" + outgoing.toJSON() + "]");
         ws.send("[" + outgoing.toJSON() + "]");
       }
     } catch {
       conn.type = RelayClientType.RELAY_CLIENT;
     }
 
-    try {
-      let obj: object = JSON.parse(msg as string);
-      if (obj !== undefined) {
-        if (obj.hasOwnProperty("devicedAdded")) {
-          let device: Device = obj.devicedAdded as Device;
-          conn.devices.indexOf()
-        } else if (obj.hasOwnProperty("devicedRemoved")) {
-
+    if (outgoing === null && obj !== undefined && obj.hasOwnProperty("type") && obj.type === "relay") {
+      console.log('message', "Alt message");
+      try {
+        const msg = obj.message;
+        if (msg.hasOwnProperty("deviceAdded")) {
+          let device = new Device(msg.deviceAdded.index, msg.deviceAdded.name, msg.deviceAdded.allowedMsgs);
+          conn.deviceAdded(device);
+        } else if (msg.hasOwnProperty("deviceRemoved")) {
+          let device = new Device(msg.deviceRemoved.index, msg.deviceRemoved.name, msg.deviceRemoved.allowedMsgs);
+          conn.deviceRemoved(device);
         }
+      } catch (ex) {
+        // no-op
+        console.error(ex);
       }
-    } catch {
     }
 
-    console.log('message', "Alt message");
     for (let wsc of rs.clients) {
-      if(wsc !== conn && wsc.type === RelayClientType.RELAY_CLIENT) {
-        wsc.client.send(msg);
+      if(wsc.type === RelayClientType.RELAY_CLIENT) {
+        wsc.client.send((wsc === conn ? "(echo) " : "") + msg);
+        if(outgoing !== null) {
+          wsc.client.send("response: [" + outgoing.toJSON() + "]");
+        }
       }
     }
   });

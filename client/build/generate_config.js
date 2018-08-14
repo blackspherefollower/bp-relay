@@ -10,7 +10,8 @@ const config = {
   build_commit: revision,
   build_date: Date(),
   buttplug_version: buttplug.version,
-  component_version: vuecomponent.version
+  component_version: vuecomponent.version,
+  gh_repo: "blackspherefollower/buutplug-relay"
 };
 
 const dir = __dirname + "/../dist/";

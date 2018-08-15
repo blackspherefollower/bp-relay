@@ -1,19 +1,25 @@
-import {ButtplugDeviceMessage, ButtplugMessage, Ok} from "buttplug";
+import {ButtplugDeviceMessage, ButtplugMessage, Ok, Device} from "buttplug";
 import {EventEmitter} from "events";
 import {IButtplugDevice} from "buttplug/dist/main/src/server/IButtplugDevice";
+import {RelayClient} from "./RelayClient";
 
 class RelayDevice extends EventEmitter implements IButtplugDevice {
   AllowedMessageTypes: string[] = [];
   Id: string = "";
-  MessageSpecifications: object = {};
+  MessageSpecifications: any = {};
   Name: string = "";
+  Client: RelayClient;
+  ClientDevice: Device;
 
-  constructor(aId: number, aName: string, aMessages: object) {
+  constructor(aClient: RelayClient, aDevice: Device) {
     super();
-    this.Id = aId.toString();
-    this.Name = aName;
-    this.AllowedMessageTypes = Object.keys(aMessages);
-    this.MessageSpecifications = aMessages;
+    this.Client = aClient;
+    this.ClientDevice = aDevice;
+    this.Name = aDevice.Name;
+    this.AllowedMessageTypes = aDevice.AllowedMessages;
+    for (const m of aDevice.AllowedMessages) {
+      this.MessageSpecifications[m] = aDevice.MessageAttributes(m);
+    }
   }
 
   Disconnect(): any {
@@ -21,7 +27,13 @@ class RelayDevice extends EventEmitter implements IButtplugDevice {
   }
 
   ParseMessage(aMsg: ButtplugDeviceMessage): Promise<ButtplugMessage> {
-    return Promise.resolve(new Ok(aMsg.Id));
+    console.log("RelayDevice", "Sending onward command: " + aMsg.toJSON());
+    let msgId = this.Client.msgId++;
+    let clientMsgId = aMsg.Id;
+    aMsg.Id = msgId;
+    aMsg.DeviceIndex = this.ClientDevice.Index;
+    this.Client.client.send(JSON.stringify({type: "buttplug", message: "[" + aMsg.toJSON() + "]"}));
+    return new Promise<ButtplugMessage>(() => new Ok(clientMsgId));
   }
 
 }

@@ -32,7 +32,7 @@ class RelayRoom {
   }
 
   repeat(message: ButtplugMessage) {
-    console.log('ButtplugRelayServer', "repeating msg: " + message);
+    console.log('ButtplugRelayServer', "repeating msg: " + message.toJSON());
     for (let wsc of this.clients) {
       wsc.client.send("[" + message.toJSON() + "]");
     }

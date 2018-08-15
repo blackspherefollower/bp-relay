@@ -14,9 +14,11 @@ class RelayClient {
   client: WebSocket;
   id: number;
   server: RelayRoom;
+  msgId: number = 0;
 
   type: RelayClientType = RelayClientType.UNKNOWN;
-  devices: Device[] = [];
+  devices: RelayDevice[] = [];
+  exDevices: RelayDevice[] = [];
 
   constructor(aClient: WebSocket, aId: number, aServer: RelayRoom) {
     this.client = aClient;
@@ -25,17 +27,24 @@ class RelayClient {
   }
 
   deviceAdded(aDevice: Device) {
-    if (this.devices.findIndex((d) => d.Index === aDevice.Index) === -1) {
-      this.devices.push(aDevice);
-      let dev = new RelayDevice(aDevice.Index + (1000 * this.id), aDevice.Name, { "VibrateCmd" : {"FeatureCount" : 1}});
+    if (this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index) === -1) {
+      let dev = this.exDevices.find((d) => d.ClientDevice.Index === aDevice.Index);
+      if (dev !== undefined) {
+        this.exDevices.splice(this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index), 1);
+      }
+      if (dev === undefined || dev.ClientDevice.Name !== aDevice.Name) {
+        dev = new RelayDevice(this, aDevice);
+      }
+      this.devices.push(dev);
       this.server.devManager.emit("relayDeviceAdded", dev);
     }
   }
 
   deviceRemoved(aDevice: Device) {
-    if (this.devices.findIndex((d) => d.Index === aDevice.Index) !== -1) {
-      this.devices.splice(this.devices.findIndex((d) => d.Index === aDevice.Index), 1);
-      let dev = new RelayDevice(aDevice.Index + (1000 * this.id), aDevice.Name, { "VibrateCmd" : {"FeatureCount" : 1}});
+    const dev = this.devices.find((d) => d.ClientDevice.Index === aDevice.Index);
+    if (dev !== undefined) {
+      this.exDevices.push(dev);
+      this.devices.splice(this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index), 1);
       this.server.devManager.emit("relayDeviceRemoved", dev);
     }
   }

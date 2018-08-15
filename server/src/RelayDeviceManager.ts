@@ -5,6 +5,7 @@ import RelayRoom from "./RelayRoom";
 class RelayDeviceManager extends EventEmitter implements IDeviceSubtypeManager {
   isScanning: boolean = false;
   server: RelayRoom;
+  devCount: number = 0;
 
   constructor(server: RelayRoom) {
     super();
@@ -18,7 +19,7 @@ class RelayDeviceManager extends EventEmitter implements IDeviceSubtypeManager {
     });
   }
 
-private DeviceAdded = async (device: any): Promise<void> => {
+  private DeviceAdded = async (device: any): Promise<void> => {
     if (device === undefined) {
       return;
     }
@@ -26,7 +27,7 @@ private DeviceAdded = async (device: any): Promise<void> => {
     this.emit("deviceadded", device);
   }
 
-private DeviceRemoved = async (device: any): Promise<void> => {
+  private DeviceRemoved = async (device: any): Promise<void> => {
     if (device === undefined) {
       return;
     }
@@ -34,15 +35,15 @@ private DeviceRemoved = async (device: any): Promise<void> => {
     this.emit("deviceremoved", device);
   }
 
-public StartScanning(): void {
+  public StartScanning(): void {
     this.isScanning = true;
-}
+  }
 
-public StopScanning(): void {
+  public StopScanning(): void {
     this.isScanning = false;
-}
+  }
 
-public get IsScanning(): boolean {
+  public get IsScanning(): boolean {
     return this.isScanning;
   }
 }

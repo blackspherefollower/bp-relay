@@ -18,16 +18,17 @@ Vue.use(ButtplugPanel);
 Vue.component("icon", Icon);
 
 const router = new Router({
-    routes: [
-        {
-            path: "/:room",
-            component: Relay,
-        },
-        {
-            path: "/",
-            component: Landing,
-        },
-    ],
+  mode: "history",
+  routes: [
+    {
+      path: "/:room",
+      component: Relay,
+    },
+    {
+      path: "/",
+      component: Landing,
+    },
+  ],
 });
 
 // tslint:disable-next-line no-unused-expression

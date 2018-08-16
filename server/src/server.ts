@@ -1,5 +1,7 @@
 import * as express from 'express';
 import * as expressWs from 'express-ws';
+import * as https from "https";
+import * as fs from "fs";
 import RelayRoom from './RelayRoom';
 import {
   ButtplugServer,
@@ -11,34 +13,33 @@ import {
 } from "buttplug";
 import * as Messages from "buttplug/dist/main/src/core/Messages";
 import {RelayClientType} from "./RelayClient";
+import * as path from "path";
 
-const wsApp = expressWs(express());
+const options = {
+  key: fs.readFileSync("cert/key.pem"),
+  cert: fs.readFileSync("cert/cert.pem"),
+};
+
+let ex = express();
+let server = https.createServer(options, ex);
+const wsApp = expressWs(ex, server);
 const app = wsApp.app;
-
-
-
-
 
 let rooms: Map<string, RelayRoom> = new Map<string, RelayRoom>();
 
-
-app.get('/', function(req, res, next){
-  let data = "<http><body><ul>";
-  rooms.forEach((x, y) => {
-    data += `<li>${y} - ${x.clients.length}</li>`;
-  });
-  data += "</ul></body></http>";
-  res.send(data);
+app.get('/dist/:file', function(req, res){
+  console.log('GET', 'JS' + req.params['file']);
+  res.sendFile(path.join(__dirname + '/../node_modules/buttplug-relay-client/dist/' + req.params['file']));
 });
 
-app.get('/:room', function(req, res, next){
-  let room = req.params['room'];
-  let rs = rooms.get(room);
-  if (rs === undefined) {
-    rs = new RelayRoom();
-  }
-  let data = `<http><body>${rs.clients.length}</body></http>`;
-  res.send(data);
+app.get('/', function(req, res){
+  console.log('GET', 'root');
+  res.sendFile(path.join(__dirname + '/../node_modules/buttplug-relay-client/index.html'));
+});
+
+app.get('/:room', function(req, res){
+  console.log('GET', 'room: ' + req.params['room']);
+  res.sendFile(path.join(__dirname + '/../node_modules/buttplug-relay-client/index.html'));
 });
 
 app.ws('/:room', function(ws, req) {
@@ -146,4 +147,4 @@ app.ws('/:room', function(ws, req) {
   });
 });
 
-app.listen(3000);
+server.listen(3001);

@@ -11,10 +11,10 @@ class RelayDeviceManager extends EventEmitter implements IDeviceSubtypeManager {
     super();
     this.server = server;
 
-    this.on("relayDeviceAdded", (device) => {
+    this.addListener("relayDeviceAdded", (device) => {
       this.DeviceAdded(device);
     });
-    this.on("relayDeviceRemoved", (device) => {
+    this.addListener("relayDeviceRemoved", (device) => {
       this.DeviceRemoved(device);
     });
   }

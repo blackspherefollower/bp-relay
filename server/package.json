@@ -21,6 +21,7 @@
   },
   "scripts": {
     "start": "nodemon --watch \"src\" --exec ts-node src/server.ts",
+    "debug": "nodemon --watch \"src\" --exec \"node --inspect node_modules/ts-node/dist/bin\" src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

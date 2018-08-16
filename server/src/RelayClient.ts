@@ -34,6 +34,7 @@ class RelayClient {
       }
       if (dev === undefined || dev.ClientDevice.Name !== aDevice.Name) {
         dev = new RelayDevice(this, aDevice);
+        //dev.Id = (this.server.devManager.devCount++).toString();
       }
       this.devices.push(dev);
       this.server.devManager.emit("relayDeviceAdded", dev);

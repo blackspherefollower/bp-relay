@@ -7,7 +7,7 @@ class RelayDevice extends EventEmitter implements IButtplugDevice {
   AllowedMessageTypes: string[] = [];
   Id: string = "";
   MessageSpecifications: any = {};
-  Name: string = "";
+  Name: string = "-1";
   Client: RelayClient;
   ClientDevice: Device;
 

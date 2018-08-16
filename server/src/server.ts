@@ -48,7 +48,6 @@ app.ws('/:room', function(ws, req) {
   let rs = rooms.get(room);
   if (rs === undefined) {
     rs = new RelayRoom();
-    rs.server.on("message", rs.repeat);
     rooms.set(room, rs);
   }
   rs.addClient(ws);

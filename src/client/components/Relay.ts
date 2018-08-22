@@ -16,6 +16,7 @@ import { Component, Model } from "vue-property-decorator";
 const AppConfig = require("../../../dist/appconfig.json");
 import { classToPlain } from "class-transformer";
 
+@Component({})
 export default class Relay extends Vue {
   private hasOpenedMenu: boolean = false;
   private menuOpened: boolean = false;

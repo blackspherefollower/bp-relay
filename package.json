@@ -18,7 +18,8 @@
     "webpack-defaults": "webpack-defaults",
     "build:main": "npm run build:config && tsc -p tsconfig.server.json",
     "pretest": "npm run build:main",
-    "deploy": "trash deploy && mkdir -p deploy && cp index.html deploy && cp -r dist deploy"
+    "deploy": "trash deploy && mkdir -p deploy && cp index.html deploy && cp -r dist deploy",
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "buttplug": "^0.8.2",

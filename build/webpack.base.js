@@ -16,7 +16,7 @@ module.exports = {
     chunks: false,
     chunkModules: false
   },
-  entry: path.resolve('./src/main.ts'),
+  entry: path.resolve('./src/client/main.ts'),
   output: {
     path: path.resolve('./dist'),
     publicPath: '/dist/',
@@ -31,6 +31,7 @@ module.exports = {
           loader: 'ts-loader',
           options: {
             appendTsSuffixTo: [/\.vue$/],
+            configFile: path.resolve('./tsconfig.client.json'),
             transpileOnly: true
           }
         }]
@@ -80,12 +81,6 @@ module.exports = {
     historyApiFallback: true,
     noInfo: true,
     contentBase: '.',
-    proxy: {
-        '/room/*': {
-            target: 'ws://localhost:3000',
-            ws: true,
-        },
-    },
   },
   performance: {
     hints: false
@@ -94,7 +89,8 @@ module.exports = {
   plugins: [
     new VueLoaderPlugin(),
     new ForkTsCheckerWebpackPlugin({
-      tslint: true
+      tslint: true,
+      tsconfig: path.resolve('./tsconfig.client.json')
     }),
   ],
   node: {

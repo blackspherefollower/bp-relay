@@ -14,7 +14,7 @@
     "outDir": "./dist/build"
   },
   "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts"
+    "src/client/**/*.ts",
+    "tests/client/**/*.ts"
   ]
 }

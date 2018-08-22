@@ -1,0 +1,15 @@
+{
+  "compilerOptions" : {
+    "target": "es6",
+    "module": "commonjs",
+    "strict": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "outDir": "./dist"
+  },
+  "include": [
+    "src/server/**/*.ts",
+    "tests/server/**/*.ts"
+  ]
+}

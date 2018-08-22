@@ -4,12 +4,12 @@ import {IButtplugDevice} from "buttplug/dist/main/src/server/IButtplugDevice";
 import {RelayClient} from "./RelayClient";
 
 class RelayDevice extends EventEmitter implements IButtplugDevice {
-  AllowedMessageTypes: string[] = [];
-  Id: string = "";
-  MessageSpecifications: any = {};
-  Name: string = "-1";
-  Client: RelayClient;
-  ClientDevice: Device;
+  public AllowedMessageTypes: string[] = [];
+  public Id: string = "";
+  public MessageSpecifications: any = {};
+  public Name: string = "-1";
+  public Client: RelayClient;
+  public ClientDevice: Device;
 
   constructor(aClient: RelayClient, aDevice: Device) {
     super();
@@ -22,14 +22,14 @@ class RelayDevice extends EventEmitter implements IButtplugDevice {
     }
   }
 
-  Disconnect(): any {
+  public Disconnect(): any {
     this.emit("deviceremoved");
   }
 
-  ParseMessage(aMsg: ButtplugDeviceMessage): Promise<ButtplugMessage> {
+  public ParseMessage(aMsg: ButtplugDeviceMessage): Promise<ButtplugMessage> {
     console.log("RelayDevice", "Sending onward command: " + aMsg.toJSON());
-    let msgId = this.Client.msgId++;
-    let clientMsgId = aMsg.Id;
+    const msgId = this.Client.msgId++;
+    const clientMsgId = aMsg.Id;
     aMsg.Id = msgId;
     aMsg.DeviceIndex = this.ClientDevice.Index;
     this.Client.client.send(JSON.stringify({type: "buttplug", message: "[" + aMsg.toJSON() + "]"}));

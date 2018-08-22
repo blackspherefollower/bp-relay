@@ -1,24 +1,23 @@
 import {Device} from "buttplug";
-import RelayRoom from './RelayRoom';
+import RelayRoom from "./RelayRoom";
 import RelayDevice from "./RelayDevice";
-import * as WebSocket from 'ws';
-
+import * as WebSocket from "ws";
 
 enum RelayClientType {
   UNKNOWN,
   BUTTPLUG_CLIENT,
-  RELAY_CLIENT
+  RELAY_CLIENT,
 }
 
 class RelayClient {
-  client: WebSocket;
-  id: number;
-  server: RelayRoom;
-  msgId: number = 0;
+  public client: WebSocket;
+  public id: number;
+  public server: RelayRoom;
+  public msgId: number = 0;
 
-  type: RelayClientType = RelayClientType.UNKNOWN;
-  devices: RelayDevice[] = [];
-  exDevices: RelayDevice[] = [];
+  public type: RelayClientType = RelayClientType.UNKNOWN;
+  public devices: RelayDevice[] = [];
+  public exDevices: RelayDevice[] = [];
 
   constructor(aClient: WebSocket, aId: number, aServer: RelayRoom) {
     this.client = aClient;
@@ -26,7 +25,7 @@ class RelayClient {
     this.server = aServer;
   }
 
-  deviceAdded(aDevice: Device) {
+  public deviceAdded(aDevice: Device) {
     if (this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index) === -1) {
       let dev = this.exDevices.find((d) => d.ClientDevice.Index === aDevice.Index);
       if (dev !== undefined) {
@@ -34,14 +33,13 @@ class RelayClient {
       }
       if (dev === undefined || dev.ClientDevice.Name !== aDevice.Name) {
         dev = new RelayDevice(this, aDevice);
-        //dev.Id = (this.server.devManager.devCount++).toString();
       }
       this.devices.push(dev);
       this.server.devManager.emit("relayDeviceAdded", dev);
     }
   }
 
-  deviceRemoved(aDevice: Device) {
+  public deviceRemoved(aDevice: Device) {
     const dev = this.devices.find((d) => d.ClientDevice.Index === aDevice.Index);
     if (dev !== undefined) {
       this.exDevices.push(dev);

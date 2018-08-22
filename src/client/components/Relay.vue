@@ -90,7 +90,7 @@
     font-weight: 400;
     src: local('Material Icons'),
     local('MaterialIcons-Regular'),
-    url(../../static/fonts/MaterialIcons-Regular.woff2) format('woff2');
+    url(../../../static/fonts/MaterialIcons-Regular.woff2) format('woff2');
   }
   .material-icons {
     font-family: 'Material Icons';

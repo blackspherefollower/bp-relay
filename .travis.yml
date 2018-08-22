@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - "8"
+install:
+  - npm install
+script:
+  - npm run build
+deploy:
+  provider: heroku
+  app: testapp-bsf
+  skip_cleanup: true
+  api_key:
+    secure: "Kip1VWd+sbV9HLveihuXSBxp+GAtHFLazoFw+QtBhbUcdFGXVKcnqK5N/vH4rjjEMpUcuIyHoEYKK3eypwnsFmeCZEeokgCe6fIEY77vQb1TmzXtXTMW1zKLzZZ4FT/P/9DshEhpfiGiBuibs+O/rD64KGwEDJURi/OSMZoz9RfRiVhVZ+yTo736icaSCwP+CyJosDbo1lg2vnsIUhiYtQ/RKaqgRiLJ9eBj6WWEVbSe+C+rY6FNd5bCfaVvvs4J4Wv64NlmWMkUPNXdbSWm7kVvql91kT0+tLtV3dkAQKvcHCM+3fluUHWQAQl9s44FW0IWluQJvg3nLQ6I6OJTQNGADhevLctfBELxjvxxAhrz3AOYCjWm1m+NcbltPzT3A4s5GPXkvcT/Q71XzCrSJhT+QMI5xcaIs7b3U0z8IBD6A8wQpVd3mO7KBXgCzGtt5b4NI9iLQlb2sE9fTsBfSWv0RgBolNslfmIVg7+7hupwLFITj9CUzC0wdgcTHs+857Ty1BX/xXvD72LrKSlq6cRORY8Gqhwo/s280zLm2gdqK8ZnHC94JJTkvIu44yW73XPNYhgoHvyGoo06SqSBRlaFgDbSCXmcFsYvnV5y1KU40YRa25JaaE7JNo+z8Y9z+LhP/DCl+ZQTgbRTyTUsVcBdz630dL/+B66eDwtrOv4="

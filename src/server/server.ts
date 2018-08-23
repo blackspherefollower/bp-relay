@@ -1,5 +1,6 @@
 import * as express from "express";
 import * as expressWs from "express-ws";
+import * as bodyParser from "body-parser";
 import RelayRoom from "./RelayRoom";
 import {
   ButtplugServer,
@@ -23,6 +24,18 @@ const wsApp = expressWs(ex);
 const app = wsApp.app;
 
 const rooms: Map<string, RelayRoom> = new Map<string, RelayRoom>();
+
+app.use((req, res, next) => {
+  bodyParser.json()(req, res, (err) => {
+    if (err) {
+      console.log("bodyparser", err.message);
+      res.status(400);
+      res.send("[" + new ButtplugError(err.message, ErrorClass.ERROR_MSG, 0).toJSON() + "]");
+      return;
+    }
+    next();
+  });
+});
 
 app.get("/dist/:file", function(req, res) {
   console.log("GET", "JS " + req.params.file);
@@ -142,6 +155,46 @@ app.ws("/:room", function(ws, req) {
   ws.on("error", function(msg) {
     console.log("error", msg);
   });
+});
+
+app.post("/:room", async function(req, res) {
+  console.log("post", req.params.room + " - " + JSON.stringify(req.body));
+  const room = req.params.room;
+  const body = JSON.stringify(req.body);
+
+  try {
+    const bmsg = FromJSON(body);
+    if (bmsg.length > 0 && (bmsg[0] instanceof ButtplugError)) {
+      if ((bmsg[0] as ButtplugError).ErrorCode === ErrorClass.ERROR_MSG &&
+        (bmsg[0] as ButtplugError).Id === 0) {
+        console.log("error", "[" + bmsg[0].toJSON() + "]");
+        res.status(400);
+        res.send("[" + bmsg[0].toJSON() + "]");
+        return;
+      }
+    }
+    for (const m of bmsg) {
+      console.log("message", "Valid BP message");
+      let rs = rooms.get(room);
+      if (rs === undefined) {
+        console.log("response", "Ok for no room");
+        res.send("[" + new Ok(4).toJSON() + "]");
+        return;
+      }
+      const outgoing = await rs.server.SendMessage(m);
+      console.log("response", "[" + outgoing.toJSON() + "]");
+      if (bmsg.length > 0 && (bmsg[0] instanceof ButtplugError)) {
+        res.status(400);
+      }
+      res.send("[" + outgoing.toJSON() + "]");
+      return;
+    }
+  } catch (ex) {
+    console.log("error", ex);
+    res.status(400);
+    res.send("[" + new ButtplugError(ex) + "]");
+    return;
+  }
 });
 
 app.listen(port, (err: any) => {

@@ -5,7 +5,7 @@
   "author": "blackspherefollower <darktech@black-sphere.co.uk>",
   "private": true,
   "scripts": {
-    "start:server": "npm run build:config && ts-node src/server/server.ts",
+    "start:server": "npm run build:config && nodemon --watch src/server --exec \"ts-node -P tsconfig.server.json\" src/server/server.ts",
     "start": "npm run build:config && webpack-dev-server --hot --config build/webpack.base.js",
     "start:remote": "npm run build:config && webpack-dev-server --hot --host 192.168.123.3 --config build/webpack.base.js",
     "start:secure": "npm run build:config && webpack-dev-server --hot --https --config build/webpack.base.js",

@@ -1,4 +1,4 @@
-import {Device} from "buttplug";
+import {Device, ButtplugServer} from "buttplug";
 import RelayRoom from "./RelayRoom";
 import RelayDevice from "./RelayDevice";
 import * as WebSocket from "ws";
@@ -10,7 +10,7 @@ enum RelayClientType {
 }
 
 class RelayClient {
-  public client: WebSocket;
+  public client: WebSocket | null;
   public id: number;
   public server: RelayRoom;
   public msgId: number = 0;
@@ -19,10 +19,24 @@ class RelayClient {
   public devices: RelayDevice[] = [];
   public exDevices: RelayDevice[] = [];
 
-  constructor(aClient: WebSocket, aId: number, aServer: RelayRoom) {
+  public bpserver: ButtplugServer | null = null;
+
+  constructor(aClient: WebSocket | null, aId: number, aServer: RelayRoom) {
     this.client = aClient;
     this.id = aId;
     this.server = aServer;
+  }
+
+  public send(aData: any) {
+    if (this.client !== null) {
+      this.client.send(aData);
+    }
+  }
+
+  public isButtplugClient() {
+    this.bpserver = new ButtplugServer();
+    this.bpserver.AddDeviceManager(this.server.devManager);
+    this.bpserver.addListener("message", (msg) => this.server.repeat(msg));
   }
 
   public deviceAdded(aDevice: Device) {

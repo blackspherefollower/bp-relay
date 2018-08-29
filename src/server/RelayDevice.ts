@@ -32,7 +32,7 @@ class RelayDevice extends EventEmitter implements IButtplugDevice {
     const clientMsgId = aMsg.Id;
     aMsg.Id = msgId;
     aMsg.DeviceIndex = this.ClientDevice.Index;
-    this.Client.client.send(JSON.stringify({type: "buttplug", message: "[" + aMsg.toJSON() + "]"}));
+    this.Client.send(JSON.stringify({type: "buttplug", message: "[" + aMsg.toJSON() + "]"}));
     return new Promise<ButtplugMessage>(() => new Ok(clientMsgId));
   }
 

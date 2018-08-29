@@ -12,6 +12,7 @@ import {
   Device,
   ButtplugDeviceMessage,
   Ok,
+  ServerInfo,
 } from "buttplug";
 import * as Messages from "buttplug/dist/main/src/core/Messages";
 import {RelayClientType} from "./RelayClient";
@@ -101,13 +102,18 @@ app.ws("/:room", function(ws, req) {
           for (const wsc of rs0.clients) {
             if (wsc === conn) {
               wsc.type = RelayClientType.BUTTPLUG_CLIENT;
+              wsc.isButtplugClient();
             } else if (wsc.type === RelayClientType.RELAY_CLIENT) {
-              wsc.client.send(JSON.stringify({newClient: m.ClientName}));
+              wsc.send(JSON.stringify({newClient: m.ClientName}));
             }
           }
         }
-
-        outgoing = await rs0.server.SendMessage(m);
+ 
+        if (conn.bpserver !== null) {
+          outgoing = await conn.bpserver.SendMessage(m);
+        } else {
+          outgoing = new ButtplugError("No server!");
+        }
         console.log("response", "[" + outgoing.toJSON() + "]");
         ws.send("[" + outgoing.toJSON() + "]");
       }
@@ -134,9 +140,9 @@ app.ws("/:room", function(ws, req) {
 
     for (const wsc of rs0.clients) {
       if (wsc.type === RelayClientType.RELAY_CLIENT) {
-        wsc.client.send((wsc === conn ? "(echo) " : "") + msg);
+        wsc.send((wsc === conn ? "(echo) " : "") + msg);
         if (outgoing !== null) {
-          wsc.client.send("response: [" + outgoing.toJSON() + "]");
+          wsc.send("response: [" + outgoing.toJSON() + "]");
         }
       }
     }
@@ -177,16 +183,34 @@ app.post("/:room", async function(req, res) {
       console.log("message", "Valid BP message");
       let rs = rooms.get(room);
       if (rs === undefined) {
-        console.log("response", "Ok for no room");
-        res.send("[" + new Ok(4).toJSON() + "]");
-        return;
+        rs = new RelayRoom();
+        rooms.set(room, rs);
       }
-      const outgoing = await rs.server.SendMessage(m);
-      console.log("response", "[" + outgoing.toJSON() + "]");
-      if (bmsg.length > 0 && (bmsg[0] instanceof ButtplugError)) {
-        res.status(400);
+      const conn = rs.addClient(null);
+      conn.isButtplugClient();
+
+      if(conn.bpserver !== null) {
+        const sInfo = await conn.bpserver.SendMessage(new RequestServerInfo("Buttplug REST relay", 1, 1));
+        if (sInfo instanceof ServerInfo) {
+          const outgoing = await conn.bpserver.SendMessage(m);
+          console.log("response", "[" + outgoing.toJSON() + "]");
+          if (bmsg.length > 0 && (bmsg[0] instanceof ButtplugError)) {
+            res.status(400);
+          }
+          res.send("[" + outgoing.toJSON() + "]");
+        }
+        res.status(500);
+        res.send("[" + sInfo.toJSON() + "]");
+      } else {
+        res.status(500);
+        res.send("[" + new ButtplugError("Internal Server Error").toJSON() + "]");
       }
-      res.send("[" + outgoing.toJSON() + "]");
+
+      const idx = rs.clients.findIndex((c) => c.id === conn.id);
+      rs.clients.splice(idx, 1);
+      if (rs.clients.length <= 0) {
+        rooms.delete(room);
+      }
       return;
     }
   } catch (ex) {

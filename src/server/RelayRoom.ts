@@ -7,8 +7,10 @@ class RelayRoom {
   public clientCount: number = 0;
   public clients: RelayClient[] = [];
   public devManager: RelayDeviceManager;
+  public name: string;
 
-  constructor() {
+  constructor(aName: string) {
+    this.name = aName;
     this.devManager = new RelayDeviceManager(this);
   }
 

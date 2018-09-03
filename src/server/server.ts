@@ -12,6 +12,7 @@ import {
   Device,
   ButtplugDeviceMessage,
   Ok,
+  Ping,
   ServerInfo,
 } from "buttplug";
 import * as Messages from "buttplug/dist/main/src/core/Messages";
@@ -62,14 +63,12 @@ app.ws("/:room", function(ws, req) {
   const room = req.params.room;
   let rs = rooms.get(room);
   if (rs === undefined) {
-    rs = new RelayRoom();
+    rs = new RelayRoom(room);
     rooms.set(room, rs);
   }
   rs.addClient(ws);
 
   ws.on("message",  async (msg) => {
-    console.log("message", msg);
-
     const rs0 = rooms.get(room);
     if (rs0 === undefined) {
       return;
@@ -97,8 +96,9 @@ app.ws("/:room", function(ws, req) {
         }
       }
       for (const m of bmsg) {
-        console.log("message", "Valid BP message");
         if (m instanceof RequestServerInfo) {
+          console.log("message", msg);
+          console.log("message", "Valid BP RequestServerInfo message");
           for (const wsc of rs0.clients) {
             if (wsc === conn) {
               wsc.type = RelayClientType.BUTTPLUG_CLIENT;
@@ -108,13 +108,15 @@ app.ws("/:room", function(ws, req) {
             }
           }
         }
- 
+
         if (conn.bpserver !== null) {
           outgoing = await conn.bpserver.SendMessage(m);
         } else {
           outgoing = new ButtplugError("No server!");
         }
-        console.log("response", "[" + outgoing.toJSON() + "]");
+        if (!(m instanceof Ping)) {
+          console.log("response", "[" + outgoing.toJSON() + "]");
+        }
         ws.send("[" + outgoing.toJSON() + "]");
       }
     } catch {
@@ -122,6 +124,7 @@ app.ws("/:room", function(ws, req) {
     }
 
     if (outgoing === null && obj !== undefined && obj.hasOwnProperty("type") && obj.type === "relay") {
+      console.log("message", msg);
       console.log("message", "Alt message");
       try {
         const rmsg = obj.message;
@@ -183,13 +186,13 @@ app.post("/:room", async function(req, res) {
       console.log("message", "Valid BP message");
       let rs = rooms.get(room);
       if (rs === undefined) {
-        rs = new RelayRoom();
+        rs = new RelayRoom(room);
         rooms.set(room, rs);
       }
       const conn = rs.addClient(null);
       conn.isButtplugClient();
 
-      if(conn.bpserver !== null) {
+      if (conn.bpserver !== null) {
         const sInfo = await conn.bpserver.SendMessage(new RequestServerInfo("Buttplug REST relay", 1, 1));
         if (sInfo instanceof ServerInfo) {
           const outgoing = await conn.bpserver.SendMessage(m);

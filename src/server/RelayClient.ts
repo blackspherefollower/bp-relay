@@ -16,8 +16,6 @@ class RelayClient {
   public msgId: number = 0;
 
   public type: RelayClientType = RelayClientType.UNKNOWN;
-  public devices: RelayDevice[] = [];
-  public exDevices: RelayDevice[] = [];
 
   public bpserver: ButtplugServer | null = null;
 
@@ -34,32 +32,26 @@ class RelayClient {
   }
 
   public isButtplugClient() {
-    this.bpserver = new ButtplugServer();
-    this.bpserver.AddDeviceManager(this.server.devManager);
+    if (this.client === null) {
+      this.bpserver = new ButtplugServer(`Buttplug Relay room ${this.server.name}`);
+    } else {
+      this.bpserver = new ButtplugServer(`Buttplug Relay room ${this.server.name}`, 5000);
+    }
+
     this.bpserver.addListener("message", (msg) => this.server.repeat(msg));
+
+    this.bpserver.AddDeviceManager(this.server.devManager);
+    for (const dev of this.server.devManager.devices) {
+      this.server.devManager.emit("deviceadded", dev);
+    }
   }
 
   public deviceAdded(aDevice: Device) {
-    if (this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index) === -1) {
-      let dev = this.exDevices.find((d) => d.ClientDevice.Index === aDevice.Index);
-      if (dev !== undefined) {
-        this.exDevices.splice(this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index), 1);
-      }
-      if (dev === undefined || dev.ClientDevice.Name !== aDevice.Name) {
-        dev = new RelayDevice(this, aDevice);
-      }
-      this.devices.push(dev);
-      this.server.devManager.emit("relayDeviceAdded", dev);
-    }
+      this.server.devManager.emit("relayDeviceAdded", this, aDevice);
   }
 
   public deviceRemoved(aDevice: Device) {
-    const dev = this.devices.find((d) => d.ClientDevice.Index === aDevice.Index);
-    if (dev !== undefined) {
-      this.exDevices.push(dev);
-      this.devices.splice(this.devices.findIndex((d) => d.ClientDevice.Index === aDevice.Index), 1);
-      this.server.devManager.emit("relayDeviceRemoved", dev);
-    }
+    this.server.devManager.emit("relayDeviceRemoved", this, aDevice);
   }
 }
 

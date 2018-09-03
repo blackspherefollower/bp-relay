@@ -11,8 +11,9 @@ class RelayDevice extends EventEmitter implements IButtplugDevice {
   public Client: RelayClient;
   public ClientDevice: Device;
 
-  constructor(aClient: RelayClient, aDevice: Device) {
+  constructor(aClient: RelayClient, aDevice: Device, aDevId: number) {
     super();
+    this.Id = "" + aDevId;
     this.Client = aClient;
     this.ClientDevice = aDevice;
     this.Name = aDevice.Name;

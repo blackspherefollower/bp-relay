@@ -155,9 +155,21 @@ app.ws("/:room", function(ws, req) {
     const rs0 = rooms.get(room);
     if (rs0 !== undefined) {
       const idx = rs0.clients.findIndex((c) => c.client === ws);
-      rs0.clients.splice(idx, 1);
+      const del = rs0.clients.splice(idx, 1);
       if (rs0.clients.length <= 0) {
         rooms.delete(room);
+      }
+      for (const c of del) {
+        try {
+          if (c.bpserver !== null) {
+            c.bpserver.ClearDeviceManagers();
+          }
+          if (c.client !== null) {
+            c.client.close();
+          }
+        } catch (e) {
+          // no-op
+        }
       }
     }
   });

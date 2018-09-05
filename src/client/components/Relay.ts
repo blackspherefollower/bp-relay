@@ -27,18 +27,25 @@ export default class Relay extends Vue {
   private config: object = AppConfig;
   private isConnected: boolean = false;
   private errorMsg: string | null = null;
+  private wsAddress: string = "";
+
+  public data() {
+    return {
+      wsAddress: this.wsAddress,
+    };
+  }
 
   public mounted() {
+    this.wsAddress = (location.protocol === "http:" ? "ws" : "wss") + "://" +
+      location.host + "/" +
+      this.$route.params.room;
     this.OpenWS();
   }
 
   private OpenWS() {
     this.isConnected = false;
     this.errorMsg = null;
-    this.ws = new WebSocket(
-      (location.protocol === "http:" ? "ws" : "wss") + "://" +
-      location.host + "/" +
-      this.$route.params.room);
+    this.ws = new WebSocket(this.wsAddress);
     this.ws.onopen = () => {
       this.isConnected = true;
       console.info("WebSocket open detected!");

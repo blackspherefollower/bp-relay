@@ -1,6 +1,11 @@
 <template>
   <v-app id="app">
     <v-touch id="gesture-wrapper" v-on:swiperight="SideNavOpen" v-on:swipeleft="SideNavClose">
+      <v-toolbar dark color="primary">
+        <v-toolbar-side-icon v-on:click="SideNavOpen"></v-toolbar-side-icon>
+        <v-toolbar-title class="white--text">Relay Room</v-toolbar-title>
+        <v-text-field solo readonly light v-model="wsAddress"></v-text-field>
+      </v-toolbar>
       <v-container>
         <header>
           <div id="sidetab-aligner"  @click="ToggleLeftSideNav">

@@ -54,7 +54,7 @@
     "vue": "^2.5.17",
     "vue-awesome": "^3.1.0",
     "vue-buttplug-material-component": "^0.2.5",
-    "vue-loader": "^15.3.0",
+    "vue-loader": "^15.7.0",
     "vue-property-decorator": "^7.0.0",
     "vue-router": "^3.0.1",
     "vue-slider-component": "^2.7.6",

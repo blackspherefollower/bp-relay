@@ -23,6 +23,18 @@ class RelayClient {
     this.client = aClient;
     this.id = aId;
     this.server = aServer;
+
+    if (this.client !== null) {
+      const interval = setInterval(this.ping, 5000);
+    }
+  }
+
+  public ping() {
+    if (this.client !== null) {
+      this.client.ping({
+        // noop
+      });
+    }
   }
 
   public send(aData: any) {

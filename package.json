@@ -42,7 +42,7 @@
     "null-loader": "^2.0.0",
     "project-name-generator": "^2.1.7",
     "style-loader": "^0.21.0",
-    "trash": "^4.3.0",
+    "trash": "^6.1.1",
     "trash-cli": "^3.0.0",
     "ts-loader": "^4.5.0",
     "ts-node": "^7.0.1",

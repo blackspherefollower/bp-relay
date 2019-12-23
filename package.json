@@ -41,7 +41,7 @@
     "noop-loader": "^1.0.0",
     "null-loader": "^2.0.0",
     "project-name-generator": "^2.1.7",
-    "style-loader": "^0.21.0",
+    "style-loader": "^1.1.1",
     "trash": "^4.3.0",
     "trash-cli": "^3.0.0",
     "ts-loader": "^4.5.0",

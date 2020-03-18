@@ -34,7 +34,7 @@
     "class-transformer": "^0.2.3",
     "cross-env": "^5.2.0",
     "css-loader": "^2.1.1",
-    "file-loader": "^1.1.11",
+    "file-loader": "^6.0.0",
     "fork-ts-checker-webpack-plugin": "^0.4.15",
     "html-loader": "^0.5.5",
     "nodemon": "^1.19.1",

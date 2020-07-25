@@ -1,33 +1,36 @@
 import {
   ButtplugClient,
   ButtplugMessage,
-  Device,
+  ButtplugClientDevice,
   Log,
   ButtplugDeviceMessage,
   StopAllDevices,
   SingleMotorVibrateCmd,
   FromJSON,
   ErrorClass,
-  Error as ButtplugError,
+  Error as ButtplugError, Ok,
 } from "buttplug";
 import Vue from "vue";
 import "vue-awesome/icons/bars";
 import { Component, Model } from "vue-property-decorator";
 const AppConfig = require("../../../dist/appconfig.json");
 import { classToPlain } from "class-transformer";
+import ComponentHelpText from "vue-buttplug-material-component/manual/manual.md";
+import BpHelpText from "../manual/manual.md";
+import TocHelpText from "../manual/toc.md";
 
 @Component({})
 export default class Relay extends Vue {
-  private hasOpenedMenu: boolean = false;
   private menuOpened: boolean = false;
-  private devices: Device[] = [];
+  private client: ButtplugClient = new ButtplugClient("Haptics Relay");
+  private devices: ButtplugClientDevice[] = [];
   private messages: string[] = [];
-  private isDragging: boolean = false;
   private ws: WebSocket | null = null;
   private config: object = AppConfig;
   private isConnected: boolean = false;
   private errorMsg: string | null = null;
   private wsAddress: string = "";
+  private helpText: string = TocHelpText + "\n" + ComponentHelpText + "\n" + BpHelpText;
 
   public data() {
     return {
@@ -36,10 +39,20 @@ export default class Relay extends Vue {
   }
 
   public mounted() {
+    this.CreateNewClient();
     this.wsAddress = (location.protocol === "http:" ? "ws" : "wss") + "://" +
       location.host + "/" +
       this.$route.params.room;
     this.OpenWS();
+  }
+
+  private CreateNewClient() {
+    this.client = new ButtplugClient("Haptics Relay");
+    this.client.addListener("disconnect", this.OnClientDisconnect);
+  }
+
+  private ToggleDialog() {
+    this.menuOpened = !this.menuOpened;
   }
 
   private OpenWS() {
@@ -72,32 +85,10 @@ export default class Relay extends Vue {
     }
   }
 
-  private SideNavOpen() {
-    if (this.isDragging) {
-      return;
-    }
-    if (!this.hasOpenedMenu) {
-      this.hasOpenedMenu = true;
-    }
-    this.menuOpened = true;
-  }
-
-  private SideNavClose() {
-    if (this.isDragging) {
-      return;
-    }
-    this.menuOpened = false;
-  }
-
-  private ToggleLeftSideNav() {
-    if (!this.hasOpenedMenu) {
-      this.hasOpenedMenu = true;
-    }
-    this.menuOpened = !this.menuOpened;
-  }
-
   private OnClientDisconnect() {
     this.devices = [];
+    this.client.removeListener("disconnect", this.OnClientDisconnect);
+    this.CreateNewClient();
     if (this.ws != null) {
       this.ws.send(JSON.stringify({type: "relay", message: { bpServerConnected: false }}));
     }
@@ -109,12 +100,9 @@ export default class Relay extends Vue {
     }
   }
 
-  private OnDeviceConnected(aDevice: Device) {
-    this.devices.push(aDevice);
-    if (this.ws != null) {
-      const dev = classToPlain(aDevice);
-      this.ws.send(JSON.stringify({type: "relay", message: { deviceAdded: dev }}));
-    }
+  private OnSelectedDevicesChange(aDeviceList: ButtplugClientDevice[]) {
+    // diff the arrays
+    this.devices = aDeviceList;
   }
 
   private async OnNewMessage(aMessage: string) {
@@ -159,7 +147,7 @@ export default class Relay extends Vue {
     this.messages.push(msgObj);
   }
 
-  private OnDeviceDisconnected(aDevice: Device) {
+  private OnDeviceDisconnected(aDevice: ButtplugClientDevice) {
     this.devices = this.devices.filter((device) => device.Index !== aDevice.Index);
     if (this.ws != null) {
       const dev = classToPlain(aDevice);
@@ -167,15 +155,17 @@ export default class Relay extends Vue {
     }
   }
 
-  private async OnDeviceMessage(aDevice: Device, aMessage: ButtplugDeviceMessage): Promise<ButtplugMessage> {
-    return (Vue as any).Buttplug.SendDeviceMessage(aDevice, aMessage);
+  private OnDeviceConnected(aDevice: ButtplugClientDevice) {
+    this.devices.push(aDevice);
+    if (this.ws != null) {
+      const dev = classToPlain(aDevice);
+      this.ws.send(JSON.stringify({type: "relay", message: { deviceAdded: dev }}));
+    }
   }
 
-  private OnDragStart() {
-    this.isDragging = true;
+  private async OnDeviceMessage(aDevice: ButtplugClientDevice, aMessage: ButtplugDeviceMessage): Promise<ButtplugMessage> {
+    await (Vue as any).Buttplug.SendDeviceMessage(aDevice, aMessage);
+    return new Ok(aMessage.Id);
   }
 
-  private OnDragStop() {
-    this.isDragging = false;
-  }
 }

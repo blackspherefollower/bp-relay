@@ -1,84 +1,72 @@
 <template>
   <v-app id="app">
-    <v-touch id="gesture-wrapper" v-on:swiperight="SideNavOpen" v-on:swipeleft="SideNavClose">
-      <v-toolbar dark color="primary">
-        <v-toolbar-side-icon v-on:click="SideNavOpen"></v-toolbar-side-icon>
-        <v-toolbar-title class="white--text">Relay Room</v-toolbar-title>
-        <v-text-field solo readonly light v-model="wsAddress"></v-text-field>
-      </v-toolbar>
-      <v-container>
-        <header>
-          <div id="sidetab-aligner"  @click="ToggleLeftSideNav">
-            <div id="sidetab-arrow">
-              <v-icon color="white" class="playicon">play_arrow</v-icon>
-            </div>
-            <div id="sidetab">
-            </div>
-          </div>
-          <div ref="patreonButton" id="patreon-button">
-            <div data-reactroot="" class="_2KV-widgets-shared--patreonWidgetWrapper"><a class="sc-bxivhb ffInCX" color="primary" type="button" href="https://www.patreon.com/bePatron?u=2860444&amp;redirect_uri=http%3A%2F%2Fbuttplug.world%2Ftest.html&amp;utm_medium=widget" role="button"><div class="sc-htpNat gdWQYu"><div class="sc-gzVnrw dJCpyC" display="flex" wrap="nowrap" direction="[object Object]"><div class="sc-dnqmqq llsQFn"><span class="sc-htoDjs fqfmvk"><svg viewBox="0 0 569 546" version="1.1" xmlns="http://www.w3.org/2000/svg"><title>Patreon logo</title><g><circle data-color="1" id="Oval" cx="362.589996" cy="204.589996" r="204.589996"></circle><rect data-color="2" id="Rectangle" x="0" y="0" width="100" height="545.799988"></rect></g></svg></span></div><div class="sc-gqjmRU fFOxVX" width="1.5"></div>Give us money</div></div></a></div>
-          </div>
-        </header>
-        <v-container grid-list-md text-xs-center id="relay-room-container">
-          <v-layout row wrap>
-            <v-flex xs6>
-              <v-list two-line v-if="this.isConnected">
-                <v-list-tile v-for="(item, index) in this.messages" :key="index">
-                  <v-list-tile-content>
-                    <v-list-tile-title v-html="item"></v-list-tile-title>
-                  </v-list-tile-content>
-                </v-list-tile>
-              </v-list>
-              <v-progress-linear :indeterminate="true" v-if="!this.isConnected">
-              </v-progress-linear>
-            </v-flex>
-            <v-flex xs6>
-              <v-list two-line>
-                <v-list-tile v-for="device in this.devices" :key="device.Index">
-                  <v-list-tile-content>
-                    <v-list-tile-title v-html="device.Name"></v-list-tile-title>
-                  </v-list-tile-content>
-                </v-list-tile>
-              </v-list>
-            </v-flex>
-          </v-layout>
-        </v-container>
-        <v-navigation-drawer
-          temporary
-          absolute
-          v-model="menuOpened">
-          <v-tabs>
-            <v-tab href="#buttplugpanel">
-              Buttplug
+    <v-container fill-height>
+      <v-layout id="playground-container" column align-center justify-top>
+        <v-flex shrink class="settings">
+          <v-btn @click="ToggleDialog()" color="purple darken-2" dark>
+            <v-icon dark left>settings</v-icon>Menu
+          </v-btn>
+        </v-flex>
+        <v-divider class="top-divider">
+        </v-divider>
+        <v-flex v-if="!this.client.Connected">
+          <h1>Not Connected.</h1>
+        </v-flex>
+        <v-flex v-if="this.client.Connected && this.client.Devices.length === 0">
+          <h1>No Devices Connected.</h1>
+        </v-flex>
+        <v-flex v-if="this.client.Connected && this.client.Devices.length !== 0 && this.devices.length === 0">
+          <h1>No Devices Activated.</h1>
+        </v-flex>
+      </v-layout>
+      <v-dialog
+              :content-class="$vuetify.breakpoint.smAndDown ? 'main-dialog' : 'main-dialog tab-panel'"
+              v-model="menuOpened"
+              :fullscreen="$vuetify.breakpoint.smAndDown"
+              :hide-overlay="$vuetify.breakpoint.smAndDown"
+              max-width="60%">
+        <v-toolbar dark color="purple darken-2" v-if="$vuetify.breakpoint.smAndDown">
+          <v-toolbar-side-icon>
+            <v-btn icon @click="ToggleDialog">
+              <v-icon>close</v-icon>
+            </v-btn>
+          </v-toolbar-side-icon>
+          <v-toolbar-title>Buttplug Playground</v-toolbar-title>
+        </v-toolbar>
+        <v-layout column>
+          <v-tabs class="fixed-tabs-bar">
+            <v-tab href="#intifacepanel">
+              Intiface
+            </v-tab>
+            <v-tab href="#helppanel">
+              Help
             </v-tab>
             <v-tab href="#aboutpanel">
               About
             </v-tab>
-            <v-tabs-items>
-              <v-tab-item id="buttplugpanel">
-                <buttplug-panel
-                  ref="buttplugPanel"
-                  @connected="OnClientConnect"
-                  @disconnected="OnClientDisconnect"
-                  @deviceconnected="OnDeviceConnected"
-                  @devicedisconnected="OnDeviceDisconnected"
-                />
-              </v-tab-item>
-              <v-tab-item id="aboutpanel">
-                <p><b>Buttplug Relay</b></p>
+            <v-tab-item value="intifacepanel">
+              <buttplug-panel
+                      :client="client"
+                      @selecteddeviceschange="OnSelectedDevicesChange"/>
+            </v-tab-item>
+            <v-tab-item value="aboutpanel">
+              <v-card flat class="about-card">
+                <p><b>Haptics Relay</b></p>
                 <p>Version: <a :href="'https://github.com/' + this.config.gh_repo + '/tree/' + this.config.build_commit">{{ this.config.build_commit }}</a></p>
-                <p>Updated: {{ this.config.build_date }}</p>
-                <p>Buttplug v{{ this.config.buttplug_version }}</p>
-                <p>Component v{{ this.config.component_version }}</p>
-                <p>Developed By <a href="https://metafetish.com">Metafetish contributors</a></p>
-                <p>Open Source! <a :href="'https://github.com/' + this.config.gh_repo">Code available on Github</a></p>
-                <p>We Like Money! <a href="https://patreon.com/qdot">Visit Our Patreon</a></p>
-              </v-tab-item>
-            </v-tabs-items>
+                <p>Updated: {{ config.build_date }}</p>
+                <p>Buttplug JS v{{ config.buttplug_version }}</p>
+                <p>Buttplug Vue Component v{{ config.component_version }}</p>
+                <p>Developed By <a href="https://github.com/blackspherefollower">blackspherefollower</a></p>
+                <p>Open Source! <a href="https://github.com/blackspherefollower/bp-relay">Code available on Github</a></p>
+                <p>We Like Money! <a href="https://patreon.com/blackspherefollower">Visit my Patreon</a></p>
+              </v-card>
+            </v-tab-item>
+            <v-tab-item value="helppanel" class="help-panel" v-html="helpText">
+            </v-tab-item>
           </v-tabs>
-        </v-navigation-drawer>
-      </v-container>
-    </v-touch>
+        </v-layout>
+      </v-dialog>
+    </v-container>
   </v-app>
 </template>
 
@@ -89,6 +77,7 @@
   /********************************/
   /* Fonts */
   /********************************/
+
   @font-face {
     font-family: 'Material Icons';
     font-style: normal;
@@ -97,6 +86,11 @@
     local('MaterialIcons-Regular'),
     url(../../../static/fonts/MaterialIcons-Regular.woff2) format('woff2');
   }
+
+  .main-dialog {
+    background: #fff;
+  }
+
   .material-icons {
     font-family: 'Material Icons';
     font-weight: normal;
@@ -109,15 +103,19 @@
     word-wrap: normal;
     white-space: nowrap;
     direction: ltr;
+
     /* Support for all WebKit browsers. */
     -webkit-font-smoothing: antialiased;
     /* Support for Safari and Chrome. */
     text-rendering: optimizeLegibility;
+
     /* Support for Firefox. */
     -moz-osx-font-smoothing: grayscale;
+
     /* Support for IE. */
     font-feature-settings: 'liga';
   }
+
   /********************************/
   /* Basic HTML styles */
   /********************************/
@@ -125,26 +123,30 @@
   html, body {
     margin: 0;
     padding: 0;
-    height: 100vh;
-    width: 100vw;
   }
+
   h1, h2 {
     font-weight: normal;
   }
+
   ul {
     list-style-type: none;
     padding: 0;
   }
+
   li {
     display: inline-block;
     margin: 0 10px;
   }
+
   a {
     color: #42b983;
   }
+
   /********************************/
   /* App container styles */
   /********************************/
+
   /* Make our touch wrapper div take up the whole screen, but also make it
      fixed so that we don't have problems with readjustment snapping */
   #gesture-wrapper {
@@ -152,6 +154,7 @@
     height: 100%;
     width: 100%;
   }
+
   #app {
     height: 100%;
     width: 100%;
@@ -164,66 +167,82 @@
     -moz-osx-font-smoothing: grayscale;
     color: #2c3e50;
   }
+
   #swipe-start-text {
     font-size:25px;
     z-index:50;
     left: 40px;
     position: fixed;
   }
-  /********************************/
-  /* Nav Drawer opener styles */
-  /********************************/
-  #sidetab-aligner {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    left: 0px;
-    position: fixed;
-  }
-  #sidetab {
-    background: #000;
-    border: 2px solid #000;
-    height: 75px;
-    left: 0;
-    width: 25px;
-    border-top-right-radius: 15px;
-    border-bottom-right-radius: 15px;
-    margin: 0;
-    padding: 0;
-    position: fixed;
-    display:block;
-    z-index: 9998;
-    cursor: pointer;
-  }
-  #sidetab-arrow {
-    z-index: 9999;
-    cursor: pointer;
-  }
+
   /********************************/
   /* Misc application styles */
   /********************************/
-  #relay-room-container {
+
+  #realay-room-container {
     width: 80%;
     margin: auto;
   }
+
   .vue-slider {
     margin-top: 20px;
     margin-bottom: 20px;
   }
-  .select-message {
-    display: flex;
-    height: 100vh;
-    align-items: center;
-    justify-content: center;
-    font-size: 25px;
-    width: 100%;
+
+  .settings {
+    font-size: 24px;
   }
-  .select-message p {
-    width: 50%;
-    line-height: 120%;
-    text-align: center;
+
+  .top-divider {
+    width: 100%;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .settings-icon {
+    vertical-align: middle;
+  }
+
+  .about-card {
+    padding: 10px;
+  }
+
+  .tab-panel {
+    min-height: 60%;
+    max-height: 60%;
+    height: 60%;
+  }
+
+  .help-panel {
+    padding: 5px;
+  }
+
+  .help-panel img {
+    max-width: 90%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .help-panel ul {
+    list-style: square outside;
+  }
+
+  .help-panel li {
+    display: list-item;
+  }
+
+  .help-panel h2, h3, h4 {
+    margin-top: 1em;
+  }
+
+  .fixed-tabs-bar .v-tabs__bar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
 </style>
 
+<style src="vuetify/dist/vuetify.min.css"></style>
 <style src="../PatreonButton.css"></style>

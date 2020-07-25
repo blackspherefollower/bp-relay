@@ -9,9 +9,9 @@ import {
   ButtplugMessage,
   RequestServerInfo,
   ErrorClass,
-  Device,
+  ButtplugServerForwardedConnector, ForwardedDeviceManager,
   ButtplugDeviceMessage,
-  Ok,
+  Ok, ButtplugDevice, ButtplugClientDevice,
   Ping,
   ServerInfo,
 } from "buttplug";
@@ -129,10 +129,10 @@ app.ws("/:room", function(ws, req) {
       try {
         const rmsg = obj.message;
         if (rmsg.hasOwnProperty("deviceAdded")) {
-          const device = new Device(rmsg.deviceAdded.index, rmsg.deviceAdded.name, rmsg.deviceAdded.allowedMsgs);
+          const device = new ButtplugClientDevice(rmsg.deviceAdded.index, rmsg.deviceAdded.name, rmsg.deviceAdded.allowedMsgs, async () => {});
           conn.deviceAdded(device);
         } else if (rmsg.hasOwnProperty("deviceRemoved")) {
-          const device = new Device(rmsg.deviceRemoved.index, rmsg.deviceRemoved.name, rmsg.deviceRemoved.allowedMsgs);
+          const device = new ButtplugClientDevice(rmsg.deviceRemoved.index, rmsg.deviceRemoved.name, rmsg.deviceRemoved.allowedMsgs, async () => {});
           conn.deviceRemoved(device);
         }
       } catch (ex) {
@@ -236,10 +236,4 @@ app.post("/:room", async function(req, res) {
   }
 });
 
-app.listen(port, (err: any) => {
-  if (err) {
-    return console.log(err);
-  }
-
-  return console.log(`server is listening on ${port}`);
-});
+app.listen(port);

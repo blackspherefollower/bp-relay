@@ -3,7 +3,9 @@ import Vuetify from "vuetify";
 import App from "./App.vue";
 const Icon = require("vue-awesome/components/Icon");
 const VueTouch = require("vue-touch");
-import * as ButtplugPanel from "vue-buttplug-material-component";
+// Import vue-buttplug-material-component from the src, otherwise vue-loader
+// won't optimize the components correctly.
+import * as ButtplugPanel from "vue-buttplug-material-component/src";
 import Router from "vue-router";
 import Relay from "./components/Relay.vue";
 import Landing from "./components/Landing.vue";
@@ -33,6 +35,7 @@ const router = new Router({
 
 // tslint:disable-next-line no-unused-expression
 new Vue({
+  vuetify : new Vuetify(),
   el: "#app",
   render: (h) => h(App),
   router,

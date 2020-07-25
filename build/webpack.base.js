@@ -3,7 +3,7 @@ const path = require('path');
 const webpack = require('webpack');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const VuetifyLoaderPlugin = require ('vuetify-loader/lib/plugin');
 
 module.exports = {
   mode: "development",
@@ -26,12 +26,11 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        exclude: /node_modules|vue\/src|tests|example/,
+        exclude: /tests|example/,
         use: [{
           loader: 'ts-loader',
           options: {
             appendTsSuffixTo: [/\.vue$/],
-            configFile: path.resolve('./tsconfig.client.json'),
             transpileOnly: true
           }
         }]
@@ -62,6 +61,31 @@ module.exports = {
         use: ['style-loader', 'css-loader']
       },
       {
+        test: /\.styl$/,
+        use: ['style-loader', 'css-loader', 'stylus-loader']
+      },
+      {
+        test: /\.s(c|a)ss$/,
+        use: [
+          'vue-style-loader',
+          'css-loader',
+          {
+            loader: 'sass-loader',
+            options: {
+              implementation: require('sass'),
+              sassOptions: {
+                fiber: require('fibers'),
+                indentedSyntax: true // optional
+              },
+            },
+          },
+        ],
+      },
+      {
+        test: /\.md$/,
+        use: ['html-loader', 'markdown-loader']
+      },
+      {
         test: /\.(html)$/,
         use: [{
           loader: 'html-loader'
@@ -80,7 +104,7 @@ module.exports = {
   devServer: {
     historyApiFallback: true,
     noInfo: true,
-    contentBase: '.',
+    contentBase: path.join('./dist'),
   },
   performance: {
     hints: false
@@ -89,9 +113,14 @@ module.exports = {
   plugins: [
     new VueLoaderPlugin(),
     new ForkTsCheckerWebpackPlugin({
-      tslint: true,
-      tsconfig: path.resolve('./tsconfig.client.json')
+//      eslint: {
+//        files: './src/client/**/*.{ts,tsx,js,jsx}'
+//      },
+      //typescript: {
+      //  configFile: path.resolve('./tsconfig.json')
+      //}
     }),
+    new VuetifyLoaderPlugin(),
   ],
   node: {
     fs: 'empty'

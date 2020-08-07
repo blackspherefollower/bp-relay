@@ -70,7 +70,7 @@
     "vue-slider-component": "^3.2.2",
     "vue-template-compiler": "^2.6.11",
     "vue-touch": "^2.0.0-beta.4",
-    "vuetify": "^2.3.6",
+    "vuetify": "^2.3.8",
     "vuetify-loader": "^1.6.0",
     "webpack": "^4.43.0",
     "webpack-bundle-analyzer": "^3.8.0",

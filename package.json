@@ -41,7 +41,7 @@
     "eslint": "^7.5.0",
     "fibers": "^5.0.0",
     "file-loader": "^6.0.0",
-    "fork-ts-checker-webpack-plugin": "^5.0.9",
+    "fork-ts-checker-webpack-plugin": "^6.2.4",
     "html-loader": "^1.1.0",
     "markdown-loader": "^5.1.0",
     "nodemon": "^2.0.4",
